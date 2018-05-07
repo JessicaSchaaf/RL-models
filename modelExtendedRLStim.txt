@@ -1,0 +1,100 @@
+model{
+     # Group Priors Person Parameters
+     # Group-level Prior Distribution Strategy Probability
+     piGroupMean ~ dunif(.001,.999) 
+     piGroupPrecision ~ dunif(log(2),log(600))
+
+     # Group-level Prior Distribution Learning Rate (LR)
+     etaGroupMean ~ dunif(.001,.999)
+     etaGroupPrecision ~ dunif(log(2),log(600))
+
+     # Group-level Prior Distribution Decisiveness
+     betaGroupMean ~ dunif(.001,.999)
+     betaGroupPrecision ~ dunif(log(2),log(600))
+
+     for(j in 1:nPart){  # Loop over all participants  
+	# Priors Person Parameters 
+	# Individual-level prior distribution Strategy Probability
+     	pi[j] ~ dbeta(piGroupMean*piGroupPrecision,piGroupPrecision * (1 - piGroupMean))T(.001,.999)  # Multiplied by inverse to avoid sampler getting stuck at 0 or 1
+	# Individual Strategy (i.e. 0 = Guessing or 1 = Learning) per Stimulus
+	for(k in 1:nStim){
+	  strategy[j,k] ~ dbern(pi[j])
+	}
+  
+        # Individual-level prior distribution LR
+        eta[j] ~ dbeta(etaGroupMean*etaGroupPrecision,etaGroupPrecision * (1 - etaGroupMean))
+	# Untransformed individual-level prior distribution Decisiveness
+	betaAcc[j] ~ dbeta(betaGroupMean*betaGroupPrecision,betaGroupPrecision * (1 - betaGroupMean))
+	# Individual Decisiveness
+        beta[j] <- 10*betaAcc[j]  # As the range of beta is [0,10] not [0,1] multiply value by 10
+
+	# Starting Values
+       	V1[j,1] <- .5  # Reward estimate for response option 1 first stimulus
+        V1[j,(nRep+1)] <- .5  # ... second stimulus
+        V1[j,(2*nRep+1)] <- .5  # ... third
+        V1[j,(3*nRep+1)] <- .5  # ... fourth
+
+        V2[j,1] <- .5  # Reward estimate for response option 2 first stimulus
+        V2[j,(nRep+1)] <- .5  # ... second stimulus
+        V2[j,(2*nRep+1)] <- .5  # ... third
+        V2[j,(3*nRep+1)] <- .5  # ... fourth
+
+       	p[j,1] <- .5  # Choice probability first stimulus
+        p[j,(nRep+1)] <- .5  # ... second stimulus
+        p[j,(2*nRep+1)] <- .5  # ... third
+        p[j,(3*nRep+1)] <- .5  # ... fourth
+
+	delta[j,1] <- ifelse(C[j,1] == 0, R[j,1] - V1[j,1], R[j,1] - V2[j,1])  # PE first stimulus
+       	delta[j,(nRep+1)] <- ifelse(C[j,(nRep+1)] == 0, R[j,(nRep+1)] - V1[j,(nRep+1)], R[j,(nRep+1)] - V2[j,(nRep+1)])  # ... second stimulus
+       	delta[j,(2*nRep+1)] <- ifelse(C[j,(2*nRep+1)] == 0, R[j,(2*nRep+1)] - V1[j,(2*nRep+1)], R[j,(2*nRep+1)] - V2[j,(2*nRep+1)])  # ... third
+       	delta[j,(3*nRep+1)] <- ifelse(C[j,(3*nRep+1)] == 0, R[j,(3*nRep+1)] - V1[j,(3*nRep+1)], R[j,(3*nRep+1)] - V2[j,(3*nRep+1)])  # ... fourth
+
+        for(t in 2:nRep){  # First stimulus   
+	   # Reward Estimates      
+           V1[j,t] <- ifelse(C[j,t-1] == 0, V1[j,t-1] + eta[j]*delta[j,t-1], V1[j,t-1])
+       	   V2[j,t] <- ifelse(C[j,t-1] == 0, V2[j,t-1], V2[j,t-1] + eta[j]*delta[j,t-1])
+	   #  Choice Probability (restricted to .5 when strategy = guessing)
+           p[j,t] <- equals(strategy[j,1],0)*.5 + equals(strategy[j,1],1)*(1/(1 + exp(-1*beta[j]*(V2[j,t] - V1[j,t]))))
+	   # Prediction Error
+	   delta[j,t] <- ifelse(C[j,t] == 0, R[j,t] - V1[j,t], R[j,t] - V2[j,t])
+	   # Observed Choices
+           C[j,t] ~ dbern(p[j,t])
+        }
+
+        for(t in (nRep+2):(2*nRep)){  # Second stimulus
+	   # Reward Estimates      
+           V1[j,t] <- ifelse(C[j,t-1] == 0, V1[j,t-1] + eta[j]*delta[j,t-1], V1[j,t-1])
+       	   V2[j,t] <- ifelse(C[j,t-1] == 0, V2[j,t-1], V2[j,t-1] + eta[j]*delta[j,t-1])
+	   #  Choice Probability (restricted to .5 when strategy = guessing)
+           p[j,t] <- equals(strategy[j,2],0)*.5 + equals(strategy[j,2],1)*(1/(1 + exp(-1*beta[j]*(V2[j,t] - V1[j,t]))))
+	   # Prediction Error
+	   delta[j,t] <- ifelse(C[j,t] == 0, R[j,t] - V1[j,t], R[j,t] - V2[j,t])
+	   # Observed Choices
+           C[j,t] ~ dbern(p[j,t])
+        }
+
+        for(t in (2*nRep+2):(3*nRep)){  # Third stimulus
+	   # Reward Estimates      
+           V1[j,t] <- ifelse(C[j,t-1] == 0, V1[j,t-1] + eta[j]*delta[j,t-1], V1[j,t-1])
+       	   V2[j,t] <- ifelse(C[j,t-1] == 0, V2[j,t-1], V2[j,t-1] + eta[j]*delta[j,t-1])
+	   #  Choice Probability (restricted to .5 when strategy = guessing)
+           p[j,t] <- equals(strategy[j,3],0)*.5 + equals(strategy[j,3],1)*(1/(1 + exp(-1*beta[j]*(V2[j,t] - V1[j,t]))))
+	   # Prediction Error
+	   delta[j,t] <- ifelse(C[j,t] == 0, R[j,t] - V1[j,t], R[j,t] - V2[j,t])
+	   # Observed Choices
+           C[j,t] ~ dbern(p[j,t])
+        }
+
+        for(t in (3*nRep+2):(nStim*nRep)){  # Fourth stimulus
+	   # Reward Estimates      
+           V1[j,t] <- ifelse(C[j,t-1] == 0, V1[j,t-1] + eta[j]*delta[j,t-1], V1[j,t-1])
+       	   V2[j,t] <- ifelse(C[j,t-1] == 0, V2[j,t-1], V2[j,t-1] + eta[j]*delta[j,t-1])
+	   #  Choice Probability (restricted to .5 when strategy = guessing)
+           p[j,t] <- equals(strategy[j,4],0)*.5 + equals(strategy[j,4],1)*(1/(1 + exp(-1*beta[j]*(V2[j,t] - V1[j,t]))))
+	   # Prediction Error
+	   delta[j,t] <- ifelse(C[j,t] == 0, R[j,t] - V1[j,t], R[j,t] - V2[j,t])
+	   # Observed Choices
+           C[j,t] ~ dbern(p[j,t])
+        }
+     }
+}
