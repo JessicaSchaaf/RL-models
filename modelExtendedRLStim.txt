@@ -17,7 +17,7 @@ model{
 	# Individual-level prior distribution Strategy Probability
      	pi[j] ~ dbeta(piGroupMean*piGroupPrecision,piGroupPrecision * (1 - piGroupMean))T(.001,.999)  # Multiplied by inverse to avoid sampler getting stuck at 0 or 1
 	# Individual Strategy (i.e. 0 = Guessing or 1 = Learning) per Stimulus
-	for(k in 1:nStim){
+	for(k in 1:nStim){  # Loop over all stimuli
 	  strategy[j,k] ~ dbern(pi[j])
 	}
   
