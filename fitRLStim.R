@@ -1,8 +1,8 @@
 rm(list=ls())
 #install.packages('R2jags')
 library('R2jags')
-setwd('Include folder you want to save files to here') 
-bugsdir <- 'Include folder containing model files here' 
+setwd('Insert folder you want to save files to here') 
+bugsdir <- 'Insert folder containing model files here' 
 
 # --------------------------------------------------------- #
 # --------------------------------------------------------- #
@@ -177,7 +177,7 @@ parameters <- c("eta","beta","etaGroupMean","etaGroupPrecision","betaGroupMean",
 
 time <- proc.time()  # Keep track of the sampling time
 
-# Save all representative samples ((n.iter*n.chains - n.burnin)/n.thin) from the posterior distribution
+# Save all representative samples ((n.iter*(n.chains - n.burnin))/n.thin) from the posterior distribution
 samples <- jags(data, inits=myinits, parameters,
                 model.file ="modelHierarchicalRLStim.txt",
                 n.chains=3, n.iter=10000, n.burnin=10000/2, n.thin=10,
@@ -259,7 +259,7 @@ parameters2 <- c("strategy","eta","beta","pi","etaGroupMean","etaGroupPrecision"
 
 time <- proc.time()  # Keep track of the sampling time
 
-# Save all representative samples ((n.iter*n.chains - n.burnin)/n.thin) from the posterior distribution
+# Save all representative samples ((n.iter*(n.chains - n.burnin))/n.thin) from the posterior distribution
 samples2 <- jags(data2, inits=myinits2, parameters2,
                  model.file ="modelExtendedRLStim.txt",
                  n.chains=3, n.iter=10000, n.burnin=10000/2, n.thin=10,
