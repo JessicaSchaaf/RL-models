@@ -1,8 +1,8 @@
 rm(list=ls())
 #install.packages('R2jags')
 library('R2jags')
-setwd('Include folder you want to save files to here') 
-bugsdir <- 'Include folder containing model files here' 
+setwd('Insert folder you want to save files to here') 
+bugsdir <- 'Insert folder containing model files here' 
 
 # --------------------------------------------------------- #
 # --------------------------------------------------------- #
