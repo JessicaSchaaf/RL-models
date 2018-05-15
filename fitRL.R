@@ -167,7 +167,7 @@ parameters <- c("eta","beta")  # Parameters saved to check sampling results
 
 time <- proc.time()  # Keep track of the sampling time
 
-# Save all representative samples ((n.iter*n.chains - n.burnin)/n.thin) from the posterior distribution
+# Save all representative samples ((n.iter*(n.chains - n.burnin))/n.thin) from the posterior distribution
 samples <- jags(data, inits=myinits, parameters,
                 model.file ="modelSimpleRL.txt",
                 n.chains=3, n.iter=10000, n.burnin=10000/2, n.thin=10,
@@ -243,7 +243,7 @@ parameters2 <- c("eta","beta","etaGroupMean","etaGroupPrecision","betaGroupMean"
 
 time <- proc.time()  # Keep track of the sampling time
 
-# Save all representative samples ((n.iter*n.chains - n.burnin)/n.thin) from the posterior distribution
+# Save all representative samples ((n.iter*(n.chains - n.burnin))/n.thin) from the posterior distribution
 samples2 <- jags(data2, inits=myinits2, parameters2,
                 model.file ="modelHierarchicalRL.txt",
                 n.chains=3, n.iter=10000, n.burnin=10000/2, n.thin=10,
@@ -325,7 +325,7 @@ parameters3 <- c("strategy","eta","beta","pi","etaGroupMean","etaGroupPrecision"
 
 time <- proc.time()  # Keep track of the sampling time
 
-# Save all representative samples ((n.iter*n.chains - n.burnin)/n.thin) from the posterior distribution
+# Save all representative samples ((n.iter*(n.chains - n.burnin))/n.thin) from the posterior distribution
 samples3 <- jags(data3, inits=myinits3, parameters3,
                  model.file ="modelExtendedRL.txt",
                  n.chains=3, n.iter=10000, n.burnin=10000/2, n.thin=10,
