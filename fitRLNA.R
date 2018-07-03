@@ -1,65 +1,30 @@
 rm(list=ls())
-setwd('C:/Users/jvsch/Dropbox/FMRIStudiesDevelopmentalPsych/BehavioralData')
-files <- read.table('overview_files.txt')
+setwd('Insert folder containing .txt file with overview of individual data file names')
+files <- read.table('Insert name of .txt file here.txt')
 
-N <- nrow(files)
-n <- 24
-k <- 4
+N <- nrow(files)  # Number of participants
+n <- 24  # Number of repetitions per stimulus
+k <- 4  # Number of stimuli
 
-C <- matrix(NA,N,n*k)
-R <- matrix(NA,N,n*k)
+# Create empty data matrices to fill
+C <- matrix(NA,N,n*k)  # Choices
+R <- matrix(NA,N,n*k)  # Obtained Rewards
 
-for(iter in 1:10){
-  #name=files[iter,1]  # For positive valence conditions
-  name=files[iter,2]  # For negative valence conditions
-  setwd(paste0('C:/Users/jvsch/Dropbox/FMRIStudiesDevelopmentalPsych/BehavioralData/',100+iter))
-  #responses <- read.table(file=paste0(name,'.txt'),header=TRUE,fill=TRUE)  # For positive valence conditions
-  responses <- read.table(file=paste0(name,'.txt'),header=TRUE,fill=TRUE,skip=2)  # For negative valence conditions
-  responses <- responses[responses$block==1,]
-  responses <- responses[order(responses$word1),]
-  responses[which(responses$fbduration=='latescreen'),c('accurate','fbtype')] <- NA
+for(iter in 1:N){
+  name=files[iter,1]  # For positive valence conditions
+  #name=files[iter,2]  # For negative valence conditions
+  setwd(paste0('Insert individual folder containing data files of one participant'))
+  responses <- read.table(file=paste0(name,'.txt'),header=TRUE,fill=TRUE)  # For positive valence conditions
+  #responses <- read.table(file=paste0(name,'.txt'),header=TRUE,fill=TRUE,skip=2)  # For negative valence conditions
+  responses <- responses[responses$block==1,]  # Only select responses for block 1
+  responses <- responses[order(responses$word1),]  # Sort responses per stimulus
+  responses[which(responses$fbduration=='latescreen'),c('accurate','fbtype')] <- NA  # Recode missing responses
   C[iter,] <- responses$accurate
   R[iter,] <- as.character(responses$fbtype)
-  #R[which(R == 'pos')] <- 1  # For positive valence conditions
-  R[which(R == 'neg')] <- 0   # For negative valence conditions
-  #R[which(R == 'no')] <- 0  # For positive valence conditions
-  R[which(R == 'no')] <- 1  # For negative valence conditions
-  R <- matrix(as.numeric(R),N,n*k)
-}
-
-for(iter in 11:19){
-  #name=files[iter,1]  # For positive valence conditions
-  name=files[iter,2]  # For negative valence conditions
-  setwd(paste0('C:/Users/jvsch/Dropbox/FMRIStudiesDevelopmentalPsych/BehavioralData/',100+iter+1))
-  #responses <- read.table(file=paste0(name,'.txt'),header=TRUE,fill=TRUE)  # For positive valence conditions
-  responses <- read.table(file=paste0(name,'.txt'),header=TRUE,fill=TRUE,skip=2)  # For negative valence conditions
-  responses <- responses[responses$block==1,]
-  responses <- responses[order(responses$word1),]
-  responses[which(responses$fbduration=='latescreen'),c('accurate','fbtype')] <- NA
-  C[iter,] <- responses$accurate
-  R[iter,] <- as.character(responses$fbtype)
-  #R[which(R == 'pos')] <- 1  # For positive valence conditions
-  R[which(R == 'neg')] <- 0   # For negative valence conditions
-  #R[which(R == 'no')] <- 0  # For positive valence conditions
-  R[which(R == 'no')] <- 1  # For negative valence conditions
-  R <- matrix(as.numeric(R),N,n*k)
-}
-
-for(iter in 1:19){
-  #name=files[iter+19,1]  # For positive valence conditions
-  name=files[iter+19,2]  # For negative valence conditions
-  setwd(paste0('C:/Users/jvsch/Dropbox/FMRIStudiesDevelopmentalPsych/BehavioralData/',200+iter))
-  #responses <- read.table(file=paste0(name,'.txt'),header=TRUE,fill=TRUE)  # For positive valence conditions
-  responses <- read.table(file=paste0(name,'.txt'),header=TRUE,fill=TRUE,skip=2)  # For negative valence conditions
-  responses <- responses[responses$block==1,]
-  responses <- responses[order(responses$word1),]
-  responses[which(responses$fbduration=='latescreen'),c('accurate','fbtype')] <- NA
-  C[iter+19,] <- responses$accurate
-  R[iter+19,] <- as.character(responses$fbtype)
-  #R[which(R == 'pos')] <- 1  # For positive valence conditions
-  R[which(R == 'neg')] <- 0   # For negative valence conditions
-  #R[which(R == 'no')] <- 0  # For positive valence conditions
-  R[which(R == 'no')] <- 1  # For negative valence conditions
+  R[which(R == 'pos')] <- 1  # For positive valence conditions
+  #R[which(R == 'neg')] <- 0   # For negative valence conditions
+  R[which(R == 'no')] <- 0  # For positive valence conditions
+  #R[which(R == 'no')] <- 1  # For negative valence conditions
   R <- matrix(as.numeric(R),N,n*k)
 }
 
@@ -68,11 +33,6 @@ for(iter in 1:19){
 # ----------- Handling missing data ------------- #
 # ----------------------------------------------- #
 # ----------------------------------------------- #
-
-#miss <- which(is.na(C), arr.ind=TRUE)
-#for(i in 1:nrow(miss)){
-#  print(paste0('NA.array[',i,'] <- C[',miss[i,1],',',miss[i,2],']'))
-#}
 
 # Move missing data to end.
 moveNA <- function(x){
@@ -103,18 +63,18 @@ for(pers in 1:N){
 # ---------------------------------------------- #
 # ---------------------------------------------- #
 # -------------- Estimation with --------------- #
-# ------------- Extended RL Model -------------- #
+# ---------- Hierarchical PSRL Model ----------- #
 # ---------------------------------------------- #
 # ---------------------------------------------- #
 
 library('R2jags')
 
-bugsdir <- 'C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/RealData Anne-Wil'
+bugsdir <- 'Insert folder containing model files'
 
 nStim <- k  # Number of picture-pseudoword associations
 nRep <- n  # Number of repetitions per association
 nPart <- N # Number of participants
-nRepNA <- nRepNA
+nRepNA <- nRepNA  # Person-specific number of repetitions per association (without missing responses)
 
 data <- list("nStim","nRep","nRepNA","nPart","C","R") # Data input for JAGS
 
@@ -131,8 +91,8 @@ time <- proc.time()  # Keep track of the sampling time
 
 # Save all representative samples ((n.iter*n.chains - n.burnin)/n.thin) from the posterior distribution
 samples <- jags(data, inits=myinits, parameters,
-                model.file ="modelExtendedRLStimNA.txt",
-                n.chains=3, n.iter=1000, n.burnin=100, n.thin=1,
+                model.file ="modelHierarchicalPSRLStimNA.txt",
+                n.chains=3, n.iter=50000, n.burnin=50000/2, n.thin=50,
                 DIC=T, working.directory=bugsdir)
 
 (proc.time() - time)[3]/60  # Check how long the sampling took
@@ -171,11 +131,7 @@ strategyEstim <- sapply(list(strategyFirstStim=apply(strategyEst[,,1],2,mean),
                              strategyThirdStim=apply(strategyEst[,,3],2,mean),
                              strategyFourthStim=apply(strategyEst[,,4],2,mean)),round)
 
-DICExt <- samples$BUGSoutput$DIC
+DICHierPSRL <- samples$BUGSoutput$DIC
 
-setwd('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/RealData Anne-Wil')
-#save.image(file='ResultsRLDataPosBlock1.RData')
-#save.image(file='ResultsRLDataPosBlock2.RData')
-save.image(file='ResultsRLDataNegBlock1.RData')
-#save.image(file='ResultsRLDataNegBlock2.RData')
+save.image(file='Insert name for results here.RData')
 
