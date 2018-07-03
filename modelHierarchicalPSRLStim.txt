@@ -1,8 +1,7 @@
 model{
      # Group Priors Person Parameters
-     # Group-level Prior Distribution Strategy Probability
-     piGroupMean ~ dunif(.001,.999) 
-     piGroupPrecision ~ dunif(log(2),log(600))
+     # Strategy Probability
+     pi ~ dbeta(1,1)
 
      # Group-level Prior Distribution Learning Rate (LR)
      etaGroupMean ~ dunif(.001,.999)
@@ -14,17 +13,10 @@ model{
 
      for(j in 1:nPart){  # Loop over all participants  
 	# Priors Person Parameters 
-	# Individual-level prior distribution Strategy Probability
-     	pi[j] ~ dbeta(piGroupMean*piGroupPrecision,piGroupPrecision * (1 - piGroupMean))T(.001,.999)  # Multiplied by inverse to avoid sampler getting stuck at 0 or 1
-	# Individual Strategy (i.e. 0 = Guessing or 1 = Learning) per Stimulus
-	for(k in 1:nStim){  # Loop over all stimuli
-	  strategy[j,k] ~ dbern(pi[j])
-	}
-  
         # Individual-level prior distribution LR
-        eta[j] ~ dbeta(etaGroupMean*etaGroupPrecision,etaGroupPrecision * (1 - etaGroupMean))
+        eta[j] ~ dbeta(etaGroupMean*etaGroupPrecision,etaGroupPrecision * (1 - etaGroupMean))T(.001,.999)
 	# Untransformed individual-level prior distribution Decisiveness
-	betaAcc[j] ~ dbeta(betaGroupMean*betaGroupPrecision,betaGroupPrecision * (1 - betaGroupMean))
+	betaAcc[j] ~ dbeta(betaGroupMean*betaGroupPrecision,betaGroupPrecision * (1 - betaGroupMean))T(.001,.999)
 	# Individual Decisiveness
         beta[j] <- 10*betaAcc[j]  # As the range of beta is [0,10] not [0,1] multiply value by 10
 
@@ -96,5 +88,10 @@ model{
 	   # Observed Choices
            C[j,t] ~ dbern(p[j,t])
         }
+	
+	# Individual Strategy (i.e. 0 = Guessing or 1 = Learning) per Stimulus
+	for(k in 1:nStim){  # Loop over all stimuli
+	  strategy[j,k] ~ dbern(pi)
+	}
      }
 }
