@@ -42,15 +42,12 @@ betaTrueUntrans <- rbeta(N,betaGroupMeanTrue*betaGroupPrecisionTrue,betaGroupPre
 betaTrue <- 10*betaTrueUntrans  # Individual-level Decisiveness on [0,10]
 #range(betaTrue)  # Check range of Decisiveness
 
-piGroupMeanTrue <- (0.75+1)/2
-piGroupPrecisionTrue <- 8
-piTrue <- rbeta(N,piGroupMeanTrue*piGroupPrecisionTrue,piGroupPrecisionTrue*(1-piGroupMeanTrue))  # Individual-level Strategy Probability
-#range(piTrue)  # Check range of Strategy Probability
+piTrue <- runif(1,0.75,1)
+#range(piTrue)  # Check range of Learning Probability
 
 # Check individual-level distribution
 #paste0('Beta(',round((etaGroupMeanTrue*etaGroupPrecisionTrue),2),',',round(((1-etaGroupMeanTrue)*etaGroupPrecisionTrue),2),')')
 #paste0('Beta(',round((betaGroupMeanTrue*betaGroupPrecisionTrue),2),',',round(((1-betaGroupMeanTrue)*betaGroupPrecisionTrue),2),')')
-#paste0('Beta(',round((piGroupMeanTrue*piGroupPrecisionTrue),2),',',round(((1-piGroupMeanTrue)*piGroupPrecisionTrue),2),')')
 
 # ---------------------------- #
 # ----- Create data sets ----- #
@@ -65,13 +62,6 @@ for(j in 1:N){
     #Z[j,i] <- rbinom(1,1,prob=piTrue[j])  # Use this if each participant either learns or guesses
   }
 }
-
-# Create matrix with reward probability per trial
-pROption1 <- sample(c(pLow,pHigh),1,.5)
-pROption2 <- ifelse(pROption1 == pLow, pROption2 <- pHigh, pROption2 <- pLow)
-
-# Create matrix of 'correct' responses (i.e. response with maximum probability of a reward)
-correct <- ifelse(pROption1 > pROption2, 0, 1)
 
 # Create empty matrices to fill
 C <- matrix(NA,N,k*n)  # Response matrix
@@ -135,7 +125,7 @@ for(iter in 1:k){
 perf <- matrix(NA,N,k*n)
 for(i in 1:(n*k)){  # See how well participants perform by checking whether they chose the choice option with the highest reward probability
   for(j in 1:N){
-    ifelse(C[j,i] == correct, perf[j,i] <- 1, perf[j,i] <- 0)
+    ifelse(C[j,i] == 1, perf[j,i] <- 1, perf[j,i] <- 0)
   }
 }
 
@@ -212,16 +202,6 @@ etaGroupPrecisionEstim <- mean(etaGroupPrecisionEst)
 betaGroupMeanEstim <- mean(betaGroupMeanEst)
 betaGroupPrecisionEstim <- mean(betaGroupPrecisionEst)
 
-# Inspect relationship true and estimated value
-#mean(etaTrue-etaEstim)  # Compute mean difference between true and estimated LR
-#cor(etaTrue,etaEstim)  # Compute correlation between true and estimated LR
-#mean(betaTrue-betaEstim)  # Compute mean difference between true and estimated Decisiveness
-#cor(betaTrue,betaEstim)  # Compute correlation between true and estimates Decisiveness
-#etaGroupMeanTrue-etaGroupMeanEstim  # Compute difference between true and estimated group-mean LR
-#etaGroupPrecisionTrue-etaGroupPrecisionEstim  # Compute difference between true and estimated group-precision LR
-#betaGroupMeanTrue-betaGroupMeanEstim  # Compute difference between true and estimated group-mean Decisiveness
-#betaGroupPrecisionTrue-betaGroupPrecisionEstim  # Compute difference between true and estimated group-precision Decisiveness
-
 DICHier <- samples$BUGSoutput$DIC
 
 # Only use this 'save output' when you want to save the hierchical estimation results in separate file
@@ -232,7 +212,7 @@ DICHier <- samples$BUGSoutput$DIC
 
 # --------------------------------------------------------- #
 # --------------------------------------------------------- #
-# ------------------ Extended RL Model -------------------- #
+# --------------- Hierarchical PSRL Model ----------------- #
 # --------------------------------------------------------- #
 # --------------------------------------------------------- #
 
@@ -250,18 +230,18 @@ data2 <- list("nRep","nStim","nPart","C","R") # Data input for JAGS
 
 # List of sampling starting values to give to JAGS
 myinits2 <- list(
-  list(eta = rep(.1,N), betaAcc = rep(.1,N), pi = rep(.1,N)), # Starting values chain 1
-  list(eta = rep(.5,N), betaAcc = rep(.5,N), pi = rep(.5,N)), # Starting values chain 2
-  list(eta = rep(.9,N), betaAcc = rep(.9,N), pi = rep(.9,N))   # Starting values chain 3
+  list(eta = rep(.1,N), betaAcc = rep(.1,N), pi = .1), # Starting values chain 1
+  list(eta = rep(.5,N), betaAcc = rep(.5,N), pi = .5), # Starting values chain 2
+  list(eta = rep(.9,N), betaAcc = rep(.9,N), pi = .9)   # Starting values chain 3
 )
 
-parameters2 <- c("strategy","eta","beta","pi","etaGroupMean","etaGroupPrecision","betaGroupMean","betaGroupPrecision","piGroupMean","piGroupPrecision")  # Parameters saved to check sampling results
+parameters2 <- c("strategy","eta","beta","pi","etaGroupMean","etaGroupPrecision","betaGroupMean","betaGroupPrecision")  # Parameters saved to check sampling results
 
 time <- proc.time()  # Keep track of the sampling time
 
 # Save all representative samples ((n.iter*(n.chains - n.burnin))/n.thin) from the posterior distribution
 samples2 <- jags(data2, inits=myinits2, parameters2,
-                 model.file ="modelExtendedRLStim.txt",
+                 model.file ="modelHierarchicalPSRLStim.txt",
                  n.chains=3, n.iter=10000, n.burnin=10000/2, n.thin=10,
                  DIC=T, working.directory=bugsdir)
 
@@ -281,8 +261,6 @@ etaGroupMeanEst2 <- samples2$BUGSoutput$sims.list$etaGroupMean
 etaGroupPrecisionEst2 <- samples2$BUGSoutput$sims.list$etaGroupPrecision
 betaGroupMeanEst2 <- samples2$BUGSoutput$sims.list$betaGroupMean
 betaGroupPrecisionEst2 <- samples2$BUGSoutput$sims.list$betaGroupPrecision
-piGroupMeanEst2 <- samples2$BUGSoutput$sims.list$piGroupMean
-piGroupPrecisionEst2 <- samples2$BUGSoutput$sims.list$piGroupPrecision
 strategyEst2 <- samples2$BUGSoutput$sims.list$strategy
 
 # Check convergence of sampling chains
@@ -298,34 +276,17 @@ etaGroupMeanEstim2 <- mean(etaGroupMeanEst2)
 etaGroupPrecisionEstim2 <- mean(etaGroupPrecisionEst2)
 betaGroupMeanEstim2 <- mean(betaGroupMeanEst2)
 betaGroupPrecisionEstim2 <- mean(betaGroupPrecisionEst2)
-piGroupMeanEstim2 <- mean(piGroupMeanEst2)
-piGroupPrecisionEstim2 <- mean(piGroupPrecisionEst2)
 strategyEstim2 <- sapply(list(strategyFirstStim=apply(strategyEst2[,,1],2,mean),
                       strategySecondStim=apply(strategyEst2[,,2],2,mean),
                       strategyThirdStim=apply(strategyEst2[,,3],2,mean),
                       strategyFourthStim=apply(strategyEst2[,,4],2,mean)),round)
 
-# Inspect relationship true and estimated value
-#mean(etaTrue-etaEstim2)  # Compute mean difference between true and estimated LR
-#cor(etaTrue,etaEstim2)  # Compute correlation between true and estimated LR
-#mean(betaTrue-betaEstim2)  # Compute mean difference between true and estimated Decisiveness
-#cor(betaTrue,betaEstim2)  # Compute correlation between true and estimates Decisiveness
-#mean(piTrue-piEstim2)  # Compute mean difference between true and estimated Strategy Probability
-#cor(piTrue,piEstim2)  # Compute corrrelation between true and estimated Strategy Probability
-#etaGroupMeanTrue-etaGroupMeanEstim2  # Compute difference between true and estimated group-mean LR
-#etaGroupPrecisionTrue-etaGroupPrecisionEstim2  # Compute difference between true and estimated group-precision LR
-#betaGroupMeanTrue-betaGroupMeanEstim2  # Compute difference between true and estimated group-mean Decisiveness
-#betaGroupPrecisionTrue-betaGroupPrecisionEstim2  # Compute difference between true and estimated group-precision Decisiveness
-#piGroupMeanTrue-piGroupMeanEstim2  # Compute difference between true and estimated group-mean Strategy Probability
-#piGroupPrecisionTrue-piGroupPrecisionEstim2  # Compute difference between true and estimated group-precision Strategy Probability
-#length(which(Z!=strategyEstim2))
+DICHierPSRL <- samples2$BUGSoutput$DIC
+#data.frame(HierRL=DICHier,HierPSRL=DICHierPSRL,row.names='DIC')
 
-DICExt <- samples2$BUGSoutput$DIC
-#data.frame(HierRL=DICHier,ExtendedRL=DICExt,row.names='DIC')
-
-# Only use this 'save output' when you want to save the extended estimation results in separate file 
+# Only use this 'save output' when you want to save the hierarchical PSRL estimation results in separate file 
 # Save output
-#save.image(file=paste0('SimulationOutput',nIter,'ExtendedN',nPart,'n',nRep,'k',nStim,'.RData'))
+#save.image(file=paste0('SimulationOutput',nIter,'HierPSRLN',nPart,'n',nRep,'k',nStim,'.RData'))
 #rm(samples2,data2,myinits2,parameters2,time,nStim,nRep,nPart,etaEst2,betaEst2,piEst2,etaGroupMeanEst2,etaGroupPrecisionEst2,betaGroupMeanEst2,betaGroupPrecisionEst2,piGroupMeanEst2,piGroupPrecisionEst2,strategyEst2,etaEstim2,betaEstim2,piEstim2,etaGroupMeanEstim2,etaGroupPrecisionEstim2,betaGroupMeanEstim2,betaGroupPrecisionEstim2,piGroupMeanEstim2,piGroupPrecisionEstim2,strategyEstim2)
 
 # Save output
