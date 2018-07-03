@@ -1,4 +1,6 @@
 rm(list=ls())
+#install.packages('R2jags')
+library('R2jags')
 setwd('Insert folder containing .txt file with overview of individual data file names')
 files <- read.table('Insert name of .txt file here.txt')
 
@@ -59,15 +61,91 @@ for(pers in 1:N){
   nRepNA[pers,3] <- length(which(C[pers,(2*n+1):(3*n)] != 99))
   nRepNA[pers,4] <- length(which(C[pers,(3*n+1):(k*n)] != 99))
 }
- 
-# ---------------------------------------------- #
-# ---------------------------------------------- #
-# -------------- Estimation with --------------- #
-# ---------- Hierarchical PSRL Model ----------- #
-# ---------------------------------------------- #
-# ---------------------------------------------- #
 
-library('R2jags')
+# ------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------- #
+# ------------------------ Hierarchical Estimation ------------------------ #
+# ------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------- #
+
+# --------------------------------------------------------- #
+# --------------------------------------------------------- #
+# ---------------- Hierarchical RL Model ------------------ #
+# --------------------------------------------------------- #
+# --------------------------------------------------------- #
+
+# ----------------------------------------------- #
+# ----------------------------------------------- #
+# ---------- BUGS model specification ----------- #
+# ----------------------------------------------- #
+# ----------------------------------------------- #
+
+nStim <- k  # Number of picture-pseudoword associations
+nRep <- n  # Number of repetitions per association
+nPart <- N # Number of participants
+nRepNA <- nRepNA  # Person-specific number of repetitions per association (without missing responses)
+
+data <- list("nStim","nRep","nPart","nRepNA","C","R") # Data input for JAGS
+
+# List of sampling starting values to give to JAGS
+myinits <- list(
+  list(eta = rep(.1,N), betaAcc = rep(.1,N)),  # Starting values chain 1
+  list(eta = rep(.5,N), betaAcc = rep(.5,N)),  # Starting values chain 2
+  list(eta = rep(.9,N), betaAcc = rep(.9,N))  # Starting values chain 3
+)
+
+parameters <- c("eta","beta","etaGroupMean","etaGroupPrecision","betaGroupMean","betaGroupPrecision")  # Parameters saved to check sampling results
+
+time <- proc.time()  # Keep track of the sampling time
+
+# Save all representative samples ((n.iter*(n.chains - n.burnin))/n.thin) from the posterior distribution
+samples <- jags(data, inits=myinits, parameters,
+                model.file ="modelHierarchicalRLStim.txt",
+                n.chains=3, n.iter=50000, n.burnin=50000/2, n.thin=50,
+                DIC=T, working.directory=bugsdir)
+
+(proc.time() - time)[3]/60  # Check how long the sampling took
+
+# ----------------------------------------------- #
+# ----------------------------------------------- #
+# ------------ Results: BUGS output ------------- #
+# ----------------------------------------------- #
+# ----------------------------------------------- #
+
+# Save samples in separate objects
+etaEst <- samples$BUGSoutput$sims.list$eta
+betaEst <- samples$BUGSoutput$sims.list$beta
+etaGroupMeanEst <- samples$BUGSoutput$sims.list$etaGroupMean
+etaGroupPrecisionEst <- samples$BUGSoutput$sims.list$etaGroupPrecision
+betaGroupMeanEst <- samples$BUGSoutput$sims.list$betaGroupMean
+betaGroupPrecisionEst <- samples$BUGSoutput$sims.list$betaGroupPrecision
+
+# Check convergence of sampling chains
+#range(samples$BUGSoutput$summary[,'Rhat'])
+#length(which(samples$BUGSoutput$summary[,'Rhat'] >= 1.1)) # Check how many sampling chains did not converge
+#which(samples$BUGSoutput$summary[,'Rhat'] >= 1.1)  # Check which chains did not converge
+
+# Compute the estimated parameter values over all samples
+etaEstim <- apply(etaEst,2,mean)
+betaEstim <- apply(betaEst,2,mean)
+etaGroupMeanEstim <- mean(etaGroupMeanEst)
+etaGroupPrecisionEstim <- mean(etaGroupPrecisionEst)
+betaGroupMeanEstim <- mean(betaGroupMeanEst)
+betaGroupPrecisionEstim <- mean(betaGroupPrecisionEst)
+
+DICHier <- samples$BUGSoutput$DIC
+
+# --------------------------------------------------------- #
+# --------------------------------------------------------- #
+# --------------- Hierarchical PSRL Model ----------------- #
+# --------------------------------------------------------- #
+# --------------------------------------------------------- #
+
+# ----------------------------------------------- #
+# ----------------------------------------------- #
+# ---------- BUGS model specification ----------- #
+# ----------------------------------------------- #
+# ----------------------------------------------- #
 
 bugsdir <- 'Insert folder containing model files'
 
