@@ -291,12 +291,12 @@ data3 <- list("nRep","nPart","C","R") # Data input for JAGS
 
 # List of sampling starting values to give to JAGS
 myinits3 <- list(
-  list(eta = rep(.1,N), betaAcc = rep(.1,N), pi = rep(.1,N)), # Starting values chain 1
-  list(eta = rep(.5,N), betaAcc = rep(.5,N), pi = rep(.5,N)), # Starting values chain 2
-  list(eta = rep(.9,N), betaAcc = rep(.9,N), pi = rep(.9,N))   # Starting values chain 3
+  list(eta = rep(.1,N), betaAcc = rep(.1,N), pi = .1), # Starting values chain 1
+  list(eta = rep(.5,N), betaAcc = rep(.5,N), pi = .5), # Starting values chain 2
+  list(eta = rep(.9,N), betaAcc = rep(.9,N), pi = .9)   # Starting values chain 3
 )
 
-parameters3 <- c("strategy","eta","beta","pi","etaGroupMean","etaGroupPrecision","betaGroupMean","betaGroupPrecision","piGroupMean","piGroupPrecision")  # Parameters saved to check sampling results
+parameters3 <- c("strategy","eta","beta","pi","etaGroupMean","etaGroupPrecision","betaGroupMean","betaGroupPrecision")  # Parameters saved to check sampling results
 
 time <- proc.time()  # Keep track of the sampling time
 
@@ -322,8 +322,6 @@ etaGroupMeanEst3 <- samples3$BUGSoutput$sims.list$etaGroupMean
 etaGroupPrecisionEst3 <- samples3$BUGSoutput$sims.list$etaGroupPrecision
 betaGroupMeanEst3 <- samples3$BUGSoutput$sims.list$betaGroupMean
 betaGroupPrecisionEst3 <- samples3$BUGSoutput$sims.list$betaGroupPrecision
-piGroupMeanEst3 <- samples3$BUGSoutput$sims.list$piGroupMean
-piGroupPrecisionEst3 <- samples3$BUGSoutput$sims.list$piGroupPrecision
 strategyEst3 <- samples3$BUGSoutput$sims.list$strategy
 
 # Check convergence of sampling chains
@@ -339,8 +337,6 @@ etaGroupMeanEstim3 <- mean(etaGroupMeanEst3)
 etaGroupPrecisionEstim3 <- mean(etaGroupPrecisionEst3)
 betaGroupMeanEstim3 <- mean(betaGroupMeanEst3)
 betaGroupPrecisionEstim3 <- mean(betaGroupPrecisionEst3)
-piGroupMeanEstim3 <- mean(piGroupMeanEst3)
-piGroupPrecisionEstim3 <- mean(piGroupPrecisionEst3)
 strategyEstim3 <- round(apply(strategyEst3,2,mean))
 #length(which(Z!=strategyEstim3))
 
