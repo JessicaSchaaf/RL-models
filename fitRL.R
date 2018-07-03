@@ -42,16 +42,13 @@ betaTrueUntrans <- rbeta(N,betaGroupMeanTrue*betaGroupPrecisionTrue,betaGroupPre
 betaTrue <- 10*betaTrueUntrans  # Individual-level Decisiveness on [0,10]
 #range(betaTrue)  # Check range of Decisiveness
 
-piGroupMeanTrue <- (0.75+1)/2
-piGroupPrecisionTrue <- 8
-piTrue <- rbeta(N,piGroupMeanTrue*piGroupPrecisionTrue,piGroupPrecisionTrue*(1-piGroupMeanTrue))  # Individual-level Strategy Probability
-#range(piTrue)  # Check range of Strategy Probability
+piTrue <- runif(1,0.75,1)
+  #range(piTrue)  # Check range of Learning Probability
 
 # Check individual-level distribution
 #paste0('Beta(',round((etaGroupMeanTrue*etaGroupPrecisionTrue),2),',',round(((1-etaGroupMeanTrue)*etaGroupPrecisionTrue),2),')')
 #paste0('Beta(',round((betaGroupMeanTrue*betaGroupPrecisionTrue),2),',',round(((1-betaGroupMeanTrue)*betaGroupPrecisionTrue),2),')')
-#paste0('Beta(',round((piGroupMeanTrue*piGroupPrecisionTrue),2),',',round(((1-piGroupMeanTrue)*piGroupPrecisionTrue),2),')')
-
+  
 # ---------------------------- #
 # ----- Create data sets ----- #
 # ---------------------------- #
@@ -63,13 +60,6 @@ for(j in 1:N){
   #Z[j] <- rbinom(1,1,0)  # Use this if each participant guesses
   #Z[j] <- rbinom(1,1,prob=piTrue[j])  # Use this if each participant either learns or guesses
 }
-
-# Create matrix with reward probability per trial
-pROption1 <- sample(c(pLow,pHigh),1,.5)
-pROption2 <- ifelse(pROption1 == pLow, pROption2 <- pHigh, pROption2 <- pLow)
-
-# Create matrix of 'correct' responses (i.e. response with maximum probability of a reward)
-correct <- ifelse(pROption1 > pROption2, 0, 1)
 
 # Create empty matrices to fill
 C <- matrix(NA,N,k*n)  # Response matrix
@@ -108,7 +98,8 @@ for(i in 2:(n*k)){
 }
 
 #sum(is.na(V1))  # If this gives 0 each participant learned; if this gives n*k*N - N each participant guessed
-
+#round(sum(is.na(V1))/(n*k)) == length(which(Z == 0))  # This should return TRUE
+  
 # Plot the cumulative sum of rewards against the items for first n items
 #plot(cumsum(R[1,]),type='l',xlim=c(0,n),ylim=c(0,n),las=1,bty='n',xlab='Item',ylab='Cumulative Sum')
 #for(j in 2:N){
@@ -125,7 +116,7 @@ for(i in 2:(n*k)){
 perf <- matrix(NA,N,k*n)
 for(i in 1:(n*k)){  # See how well participants perform by checking whether they chose the choice option with the highest reward probability
   for(j in 1:N){
-    ifelse(C[j,i] == correct, perf[j,i] <- 1, perf[j,i] <- 0)
+    ifelse(C[j,i] == 1, perf[j,i] <- 1, perf[j,i] <- 0)
   }
 }
 
@@ -193,12 +184,6 @@ betaEst <- samples$BUGSoutput$sims.list$beta
 # Compute the estimated parameter values over all samples
 etaEstim <- apply(etaEst,2,mean)
 betaEstim <- apply(betaEst,2,mean)
-
-# Inspect relationship true and estimated value
-#mean(etaTrue-etaEstim)  # Compute mean difference between true and estimated LR
-#cor(etaTrue,etaEstim)  # Compute correlation between true and estimated LR
-#mean(betaTrue-betaEstim)  # Compute mean difference between true and estimated Decisiveness
-#cor(betaTrue,betaEstim)  # Compute correlation between true and estimates Decisiveness
 
 DICSimple <- samples$BUGSoutput$DIC
 
@@ -278,16 +263,6 @@ etaGroupPrecisionEstim2 <- mean(etaGroupPrecisionEst2)
 betaGroupMeanEstim2 <- mean(betaGroupMeanEst2)
 betaGroupPrecisionEstim2 <- mean(betaGroupPrecisionEst2)
 
-# Inspect relationship true and estimated value
-#mean(etaTrue-etaEstim)  # Compute mean difference between true and estimated LR
-#cor(etaTrue,etaEstim)  # Compute correlation between true and estimated LR
-#mean(betaTrue-betaEstim)  # Compute mean difference between true and estimated Decisiveness
-#cor(betaTrue,betaEstim)  # Compute correlation between true and estimates Decisiveness
-#etaGroupMeanTrue-etaGroupMeanEstim  # Compute difference between true and estimated group-mean LR
-#etaGroupPrecisionTrue-etaGroupPrecisionEstim  # Compute difference between true and estimated group-precision LR
-#betaGroupMeanTrue-betaGroupMeanEstim  # Compute difference between true and estimated group-mean Decisiveness
-#betaGroupPrecisionTrue-betaGroupPrecisionEstim  # Compute difference between true and estimated group-precision Decisiveness
-
 DICHier <- samples2$BUGSoutput$DIC
 
 # Only use this 'save output' when you want to save the hierchical estimation results in separate file
@@ -298,7 +273,7 @@ DICHier <- samples2$BUGSoutput$DIC
 
 # --------------------------------------------------------- #
 # --------------------------------------------------------- #
-# ------------------ Extended RL Model -------------------- #
+# --------------- Hierarchical PSRL Model ----------------- #
 # --------------------------------------------------------- #
 # --------------------------------------------------------- #
 
@@ -327,7 +302,7 @@ time <- proc.time()  # Keep track of the sampling time
 
 # Save all representative samples ((n.iter*(n.chains - n.burnin))/n.thin) from the posterior distribution
 samples3 <- jags(data3, inits=myinits3, parameters3,
-                 model.file ="modelExtendedRL.txt",
+                 model.file ="modelHierarchicalPSRL.txt",
                  n.chains=3, n.iter=10000, n.burnin=10000/2, n.thin=10,
                  DIC=T, working.directory=bugsdir)
 
@@ -367,28 +342,14 @@ betaGroupPrecisionEstim3 <- mean(betaGroupPrecisionEst3)
 piGroupMeanEstim3 <- mean(piGroupMeanEst3)
 piGroupPrecisionEstim3 <- mean(piGroupPrecisionEst3)
 strategyEstim3 <- round(apply(strategyEst3,2,mean))
-
-# Inspect relationship true and estimated value
-#mean(etaTrue-etaEstim3)  # Compute mean difference between true and estimated LR
-#cor(etaTrue,etaEstim3)  # Compute correlation between true and estimated LR
-#mean(betaTrue-betaEstim3)  # Compute mean difference between true and estimated Decisiveness
-#cor(betaTrue,betaEstim3)  # Compute correlation between true and estimates Decisiveness
-#mean(piTrue-piEstim3)  # Compute mean difference between true and estimated Strategy Probability
-#cor(piTrue,piEstim3)  # Compute corrrelation between true and estimated Strategy Probability
-#etaGroupMeanTrue-etaGroupMeanEstim3  # Compute difference between true and estimated group-mean LR
-#etaGroupPrecisionTrue-etaGroupPrecisionEstim3  # Compute difference between true and estimated group-precision LR
-#betaGroupMeanTrue-betaGroupMeanEstim3  # Compute difference between true and estimated group-mean Decisiveness
-#betaGroupPrecisionTrue-betaGroupPrecisionEstim3  # Compute difference between true and estimated group-precision Decisiveness
-#piGroupMeanTrue-piGroupMeanEstim3  # Compute difference between true and estimated group-mean Strategy Probability
-#piGroupPrecisionTrue-piGroupPrecisionEstim3  # Compute difference between true and estimated group-precision Strategy Probability
 #length(which(Z!=strategyEstim3))
 
-DICExt <- samples3$BUGSoutput$DIC
-#data.frame(SimpleRL=DICSimple,HierRL=DICHier,ExtendedRL=DICExt,row.names='DIC')
+DICHierPSRL <- samples3$BUGSoutput$DIC
+#data.frame(SimpleRL=DICSimple,HierRL=DICHier,HierPSRL=DICHierPSRL,row.names='DIC')
 
-# Only use this 'save output' when you want to save the extended estimation results in separate file 
+# Only use this 'save output' when you want to save the hierarchical PSRL estimation results in separate file 
 # Save output
-#save.image(file=paste0('SimulationOutput',nIter,'ExtendedN',nPart,'n',nRep,'k',nStim,'.RData'))
+#save.image(file=paste0('SimulationOutput',nIter,'HierPSRLN',nPart,'n',nRep,'k',nStim,'.RData'))
 #rm(samples3,data3,myinits3,parameters3,time,nStim,nRep,nPart,etaEst3,betaEst3,piEst3,etaGroupMeanEst3,etaGroupPrecisionEst3,betaGroupMeanEst3,betaGroupPrecisionEst3,piGroupMeanEst3,piGroupPrecisionEst3,strategyEst3,etaEstim3,betaEstim3,piEstim3,etaGroupMeanEstim3,etaGroupPrecisionEstim3,betaGroupMeanEstim3,betaGroupPrecisionEstim3,piGroupMeanEstim3,piGroupPrecisionEstim3,strategyEstim3)
 
 # Save output
