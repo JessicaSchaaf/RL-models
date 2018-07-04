@@ -51,8 +51,6 @@ model{
 	   delta[j,t] <- ifelse(C[j,t] == 0, R[j,t] - V1[j,t], R[j,t] - V2[j,t])
 	   # Observed Choices
            C[j,t] ~ dbern(p[j,t])
-	   R[j,t] ~ dbern(pR[j,t])
-	   pR[j,t] <- ifelse(C[j,t] == 0, .35, .65)
         }
 
         for(t in (nRep+2):(nRep+nRepNA[j,2])){  # Second stimulus
@@ -65,8 +63,6 @@ model{
 	   delta[j,t] <- ifelse(C[j,t] == 0, R[j,t] - V1[j,t], R[j,t] - V2[j,t])
 	   # Observed Choices
            C[j,t] ~ dbern(p[j,t])
-	   R[j,t] ~ dbern(pR[j,t])
-	   pR[j,t] <- ifelse(C[j,t] == 0, .35, .65)
         }
 
         for(t in (2*nRep+2):(2*nRep+nRepNA[j,3])){  # Third stimulus
@@ -79,8 +75,6 @@ model{
 	   delta[j,t] <- ifelse(C[j,t] == 0, R[j,t] - V1[j,t], R[j,t] - V2[j,t])
 	   # Observed Choices
            C[j,t] ~ dbern(p[j,t])
-	   R[j,t] ~ dbern(pR[j,t])
-	   pR[j,t] <- ifelse(C[j,t] == 0, .35, .65)
         }
 
         for(t in (3*nRep+2):(3*nRep+nRepNA[j,4])){  # Fourth stimulus
@@ -93,8 +87,6 @@ model{
 	   delta[j,t] <- ifelse(C[j,t] == 0, R[j,t] - V1[j,t], R[j,t] - V2[j,t])
 	   # Observed Choices
            C[j,t] ~ dbern(p[j,t])
-	   R[j,t] ~ dbern(pR[j,t])
-	   pR[j,t] <- ifelse(C[j,t] == 0, .35, .65)
         }
 
         # Individual Strategy (i.e. 0 = Guessing or 1 = Learning)
