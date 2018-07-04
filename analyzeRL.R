@@ -7,14 +7,14 @@
 rm(list=ls())
 library('R2jags')
 
-# Define the folder where the .RData files with simulation results are storedm
-setwd('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Mixed II')
+# Define the folder where the .RData files with simulation results are stored
+setwd('Insert folder containing data files here')
 
 # Specify the characteristics of the data set
 nStim <- 4  # Number of picture-pseudoword associations
 nRep <- 144  # Number of repetitions per association
 nPart <- 30  # Number of participants
-Iterations <- 100  # Number of replications ran
+nIter <- 100  # Number of replications ran
 
 # -------------------------------------- #
 # ---------- Extended RL Model --------- #
@@ -28,9 +28,9 @@ Iterations <- 100  # Number of replications ran
 # --------------------------- #
 
 # First check the convergence of the sampling chains
-convergence <- matrix(NA,Iterations,4)
+convergence <- matrix(NA,nIter,4)
 
-for(it in 1:Iterations){  # Loop over all replications 
+for(it in 1:nIter){  # Loop over all replications 
   #load(paste0('SimulationOutput',it,'LearningN',nPart,'n',nRep,'k',nStim,'.RData'))  # Load each data file from Condition I = Learning
   #load(paste0('SimulationOutput',it,'GuessingN',nPart,'n',nRep,'k',nStim,'.RData'))  # Load each data file from Condition II = Guessing
   load(paste0('SimulationOutput',it,'Mixed1N',nPart,'n',nRep,'k',nStim,'.RData'))  # Load each data file from Condition III = Mixed I
@@ -38,8 +38,8 @@ for(it in 1:Iterations){  # Loop over all replications
   convergence[it,1] <- it
 # R-hat (Gelman & Rubin, 1992) values above 1.1 indicate that the Markov chain failed to converge.
   convergence[it,2] <- length(which(samplesHier$BUGSoutput$summary[,'Rhat'] >= 1.1))  # Inspect convergence hierarchical RL model
-  convergence[it,3] <- length(which(samplesExt$BUGSoutput$summary[1:(N*2+6),'Rhat'] >= 1.1))  # Inspect convergence extended RL model
-  convergence[it,4] <- length(which(samplesExt$BUGSoutput$summary[-(1:(N*2+6)),'Rhat'] >= 1.1))
+  convergence[it,3] <- length(which(samplesHierPSRL$BUGSoutput$summary[1:(N*2+6),'Rhat'] >= 1.1))  # Inspect convergence hierarchical PSRL model
+  convergence[it,4] <- length(which(samplesHierPSRL$BUGSoutput$summary[-(1:(N*2+6)),'Rhat'] >= 1.1))
 }
 colnames(convergence) <- c('iter','notConvergedHier','notConvergedExt','notConvergedExtStrategy')
 convergence  # This matrix shows how many chains per replication failed to converge.
@@ -56,15 +56,15 @@ write.csv(convergence,file=paste0('convergenceMixed1N',N,'n',n,'k',k,'.csv'))
 # First the individual-level results ...
 ind <- list(meanEtaTrue='',sdEtaTrue='',meanEtaEstimHier='',sdEtaEstimHier='',meanEtaEstimExt='',sdEtaEstimExt='',meanBetaTrue='',sdBetaTrue='',meanBetaEstimHier='',sdBetaEstimHier='',meanBetaEstimExt='',sdBetaEstimExt='',meanPiTrue='',meanPiEstim='')
 
-for(it in 1:Iterations){
+for(it in 1:nIter){
   k <- 4  # Number of picture-pseudoword associations
   N <- 30  # Number of repetitions per association
   n <- 144  # Number of participants
   
   #load(paste0('SimulationOutput',it,'LearningN',N,'n',n,'k',k,'.RData'))
   #load(paste0('SimulationOutput',it,'GuessingN',N,'n',n,'k',k,'.RData'))
-  #load(paste0('SimulationOutput',it,'Mixed1N',N,'n',n,'k',k,'.RData'))
-  load(paste0('SimulationOutput',it,'Mixed2N',N,'n',n,'k',k,'.RData'))
+  load(paste0('SimulationOutput',it,'Mixed1N',N,'n',n,'k',k,'.RData'))
+  #load(paste0('SimulationOutput',it,'Mixed2N',N,'n',n,'k',k,'.RData'))
   ind[[1]][[it]] <- format(round(mean(etaTrue),3),nsmall=3)
   ind[[2]][[it]] <- format(round(sd(etaTrue),3),nsmall=3)
   ind[[3]][[it]] <- format(round(mean(etaEstimHier),3),nsmall=3)
@@ -77,9 +77,9 @@ for(it in 1:Iterations){
   ind[[10]][[it]] <- format(round(sd(betaEstimHier),3),nsmall=3)
   ind[[11]][[it]] <- format(round(mean(betaEstimExt),3),nsmall=3)
   ind[[12]][[it]] <- format(round(sd(betaEstimExt),3),nsmall=3)
-  #ind[[13]][[it]] <- 1
-  #ind[[13]][[it]] <- 0
-  ind[[13]][[it]] <- format(round(piTrue,3),nsmall=3)
+  #ind[[13]][[it]] <- 1  # Use this in Learning Condition
+  #ind[[13]][[it]] <- 0  # Use this in Guessing Condition
+  ind[[13]][[it]] <- format(round(piTrue,3),nsmall=3)  # Use this in Mixed Conditions
   ind[[14]][[it]] <- format(round(piEstimExt,3),nsmall=3)
 }
 
@@ -94,8 +94,8 @@ for(it in 1:Iterations){
   n <- 144  # Number of participants
   #load(paste0('SimulationOutput',it,'LearningN',N,'n',n,'k',k,'.RData'))
   #load(paste0('SimulationOutput',it,'GuessingN',N,'n',n,'k',k,'.RData'))
-  #load(paste0('SimulationOutput',it,'Mixed1N',N,'n',n,'k',k,'.RData'))
-  load(paste0('SimulationOutput',it,'Mixed2N',N,'n',n,'k',k,'.RData'))
+  load(paste0('SimulationOutput',it,'Mixed1N',N,'n',n,'k',k,'.RData'))
+  #load(paste0('SimulationOutput',it,'Mixed2N',N,'n',n,'k',k,'.RData'))
   
   group[[1]] <- etaGroupMeanTrue
   group[[2]] <- etaGroupPrecisionTrue
@@ -136,20 +136,17 @@ res <- data.frame(etaTrue=ind$meanEtaTrue,
 
 #write.csv(res,file=paste0('parameterEstimatesLearningN',N,'n',n,'k',k,'.csv'))
 #write.csv(res,file=paste0('parameterEstimatesGuessingN',N,'n',n,'k',k,'.csv'))
-#write.csv(res,file=paste0('parameterEstimatesMixed1N',N,'n',n,'k',k,'.csv'))
-write.csv(res,file=paste0('parameterEstimatesMixed2N',N,'n',n,'k',k,'.csv'))
+write.csv(res,file=paste0('parameterEstimatesMixed1N',N,'n',n,'k',k,'.csv'))
+#write.csv(res,file=paste0('parameterEstimatesMixed2N',N,'n',n,'k',k,'.csv'))
 
 # Save the results
-#setwd('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Learning/N30n144')
-#setwd('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Guessing')
-#setwd('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Mixed I')
-setwd('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Mixed II')
+setwd('Insert folder you want to save estimates to here')
 
 
 # Compute percentage of 95% CIs that contain true parameter value
 perc <- list(etaHier='',etaExt='',betaHier='',betaExt='',piExt='',strategies='',DIC='')
 
-for(it in 1:Iterations){
+for(it in 1:nIter){
   counterEtaHier <- 0
   counterEtaExt <- 0
   counterBetaHier <- 0
@@ -157,8 +154,8 @@ for(it in 1:Iterations){
   
   #load(paste0('SimulationOutput',it,'LearningN30n144k4.RData'))
   #load(paste0('SimulationOutput',it,'GuessingN30n144k4.RData'))
-  #load(paste0('SimulationOutput',it,'Mixed1N30n144k4.RData'))
-  load(paste0('SimulationOutput',it,'Mixed2N30n144k4.RData'))
+  load(paste0('SimulationOutput',it,'Mixed1N30n144k4.RData'))
+  #load(paste0('SimulationOutput',it,'Mixed2N30n144k4.RData'))
   
   for(pp in 1:N){
     if(etaTrue[pp] >= quantile(etaEstHier[,pp],c(.025,.975))[1] & etaTrue[pp] <= quantile(etaEstHier[,pp],c(.025,.975))[2]){
@@ -178,6 +175,7 @@ for(it in 1:Iterations){
     counterDIC <- ifelse(DICExt < DICHier, 1, 0)
   }
   
+  # Compute proportion of correctly classified strategies per participant
   prop <- matrix(NA,N,k)
   
   for(stim in 1:k){
@@ -199,23 +197,18 @@ res2 <- as.data.frame(perc)
 
 #write.csv(res2,file=paste0('percentagesLearningN',N,'n',n,'k',k,'.csv'))
 #write.csv(res2,file=paste0('percentagesGuessingN',N,'n',n,'k',k,'.csv'))
-#write.csv(res2,file=paste0('percentagesMixed1N',N,'n',n,'k',k,'.csv'))
-write.csv(res2,file=paste0('percentagesMixed2N',N,'n',n,'k',k,'.csv'))
+write.csv(res2,file=paste0('percentagesMixed1N',N,'n',n,'k',k,'.csv'))
+#write.csv(res2,file=paste0('percentagesMixed2N',N,'n',n,'k',k,'.csv'))
 
 
 # Compute average width of the individual 95% credible intervals
-#setwd('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Learning/N30n144')
-#setwd('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Guessing')
-#setwd('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Mixed I')
-setwd('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Mixed II')
-
 widthCI <- list(meanWidthEtaHier='',meanWidthEtaExt='',meanWidthBetaHier='',meanWidthBetaExt='',meanWidthPiExt='')
 
 for(nit in 1:100){
-  #load(paste0('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Learning/N30n144/SimulationOutput',nit,'LearningN30n144k4.RData'))
-  #load(paste0('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Guessing/SimulationOutput',nit,'GuessingN30n144k4.RData'))
-  #load(paste0('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Mixed I/SimulationOutput',nit,'Mixed1N30n144k4.RData'))
-  load(paste0('C:/Users/jvsch/Documents/Master/Onderzoek Reinforcement Learning/Simulation Study/!!!!!ActualSimulation!!!!!/Mixed II/SimulationOutput',nit,'Mixed2N30n144k4.RData'))
+  #load(paste0('SimulationOutput',nit,'LearningN30n144k4.RData'))
+  #load(paste0('SimulationOutput',nit,'GuessingN30n144k4.RData'))
+  load(paste0('SimulationOutput',nit,'Mixed1N30n144k4.RData'))
+  #load(paste0('SimulationOutput',nit,'Mixed2N30n144k4.RData'))
   widthCIEtaHier <- numeric()
   widthCIEtaExt <- numeric()
   widthCIBetaHier <- numeric()
@@ -248,5 +241,5 @@ widthCI <- as.data.frame(widthCI)
 
 #write.csv(widthCI,file=paste0('widthCILearningN',N,'n',n,'k',k,'.csv'))
 #write.csv(widthCI,file=paste0('widthCIGuessingN',N,'n',n,'k',k,'.csv'))
-#write.csv(widthCI,file=paste0('widthCIMixed1N',N,'n',n,'k',k,'.csv'))
-write.csv(widthCI,file=paste0('widthCIMixed2N',N,'n',n,'k',k,'.csv'))
+write.csv(widthCI,file=paste0('widthCIMixed1N',N,'n',n,'k',k,'.csv'))
+#write.csv(widthCI,file=paste0('widthCIMixed2N',N,'n',n,'k',k,'.csv'))
