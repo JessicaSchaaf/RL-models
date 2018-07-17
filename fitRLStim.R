@@ -24,8 +24,8 @@ N <- 30  # Number of participants
 pC <- .5  # Prior probability to choose response option 2
 
 # ----- Reward probabilities of both choice options ----- #
-pLow <- .2 # Lowest reward probability
-pHigh <- .8 # Highest reward probability
+pROption1 <- .2 # Lowest reward probability
+pROption2 <- .8 # Highest reward probability
 # To check whether code resembles learning change pLow to 0 and pHigh to 1
 
 # ----- Sample person parameters ----- #
